@@ -32,6 +32,13 @@ app.use(express.urlencoded({ extended: true }));
 
 myDB(async client => {
   const myDataBase = await client.db('database').collection('users');
+  
+  function ensureAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.redirect('/');
+};
 
   app.route('/').get((req, res) => {
     res.render('index', {
@@ -40,6 +47,12 @@ myDB(async client => {
       showLogin: true
     });
   });
+  
+  app
+ .route('/profile')
+ .get(ensureAuthenticated, (req,res) => {
+    res.render('profile');
+ });
   
   app.route('/login').post(passport.authenticate('local', { failureRedirect: '/' }), (req, res) => {
   res.redirect('/profile');
