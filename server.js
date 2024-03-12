@@ -10,6 +10,9 @@ const { ObjectID } = require('mongodb');
 const bcrypt = require('bcrypt');
 const routes = require('./routes.js');
 const auth = require('./auth.js');
+const MongoStore = require('connect-mongo')(session);
+const URI = process.env.MONGO_URI;
+const store = new MongoStore({ url: URI });
 
 
 
@@ -44,11 +47,28 @@ myDB(async client => {
   routes(app, myDataBase);
   auth(app, myDataBase);
   
+  io.use(
+  passportSocketIo.authorize({
+    cookieParser: cookieParser,
+    key: 'express.sid',
+    secret: process.env.SESSION_SECRET,
+    store: store,
+    success: onAuthorizeSuccess,
+    fail: onAuthorizeFail
+  })
+);
+  
   let currentUsers = 0;
   io.on('connection', socket => {
     ++currentUsers;
     io.emit('user count', currentUsers);
   console.log('A user has connected');
+    
+    socket.on('disconnect', () => {
+      --currentUsers;
+      io.emit('user count', currentUsers);
+  console.log('A user diconnected');
+});
 });
   
 }).catch(e => {
