@@ -12,7 +12,11 @@ const routes = require('./routes.js');
 const auth = require('./auth.js');
 
 
+
 const app = express();
+
+const http = require('http').createServer(app);
+const io = require('socket.io')(http);
 
 app.set('view engine', 'pug');
 app.set('views', './views/pug');
@@ -39,6 +43,11 @@ myDB(async client => {
   
   routes(app, myDataBase);
   auth(app, myDataBase);
+  
+  io.on('connection', socket => {
+  console.log('A user has connected');
+});
+  
 }).catch(e => {
   app.route('/').get((req, res) => {
     res.render('index', { title: e, message: 'Unable to connect to database' });
@@ -47,6 +56,6 @@ myDB(async client => {
 
   
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+http.listen(PORT, () => {
   console.log(`Listening on port ${PORT}`);
 });
